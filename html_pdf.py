@@ -9,7 +9,6 @@ from selenium.webdriver.chrome.options import Options
 from PIL import Image
 import tempfile
 import io
-import zipfile
 import os
 
 # Configure Streamlit
@@ -23,7 +22,7 @@ def convert_urls_to_pdfs(urls, mpns):
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration
 
-    pdf_paths = []  # To store file paths for the zip
+    pdf_paths = []  # To store the paths of saved PDFs
     with tempfile.TemporaryDirectory() as temp_dir:
         service = Service(executable_path='chromedriver')
         driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options)
@@ -33,13 +32,10 @@ def convert_urls_to_pdfs(urls, mpns):
                 driver.get(url)
                 time.sleep(5)  # Wait for the page to load
 
-                # Set the window size to the full page size
-                driver.set_window_size(1920, 1080)  # Adjust as needed
-                time.sleep(2)  # Allow time for resizing
-
                 # Get the full height of the page
                 total_height = driver.execute_script("return document.body.scrollHeight")
                 driver.set_window_size(1920, total_height)  # Resize the window to capture the full page
+                time.sleep(2)  # Allow time for resizing
 
                 # Capture the full page as an image
                 screenshot_path = f'{temp_dir}/screenshot_{i}.png'
@@ -50,8 +46,10 @@ def convert_urls_to_pdfs(urls, mpns):
                 pdf_path = os.path.join(temp_dir, f'{mpns[i].replace("/", "_").replace("\\", "_")}.pdf')
                 image.convert('RGB').save(pdf_path)
 
-                # Store the PDF path for zipping later
+                # Store the PDF path for later use
                 pdf_paths.append(pdf_path)
+
+                st.success(f"Saved PDF for {mpns[i]}.")
 
             except Exception as e:
                 st.error(f"Error processing {url}: {e}")
@@ -80,27 +78,16 @@ if uploaded_file:
             if urls:
                 with st.spinner("Converting..."):
                     pdf_paths = convert_urls_to_pdfs(urls, mpns)
-                    st.success("Conversion completed!")
 
-                    # Check if any PDFs were created
-                    if not pdf_paths:
-                        st.warning("No PDF files were created.")
-                    else:
-                        # Create a zip file to download all PDFs
-                        zip_buffer = io.BytesIO()
-                        with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-                            for pdf_path in pdf_paths:
-                                zip_file.write(pdf_path, arcname=os.path.basename(pdf_path))  # Use only the filename
-
-                        zip_buffer.seek(0)  # Move to the beginning of the buffer
-
-                        # Provide a download button for the zip file
-                        st.download_button(
-                            label="Download All PDFs as a ZIP File",
-                            data=zip_buffer,
-                            file_name="pdfs.zip",
-                            mime='application/zip'
-                        )
+                    # Provide download links for each generated PDF
+                    for pdf_path in pdf_paths:
+                        with open(pdf_path, 'rb') as pdf_file:
+                            st.download_button(
+                                label=f"Download {os.path.basename(pdf_path)}",
+                                data=pdf_file,
+                                file_name=os.path.basename(pdf_path),
+                                mime='application/pdf'
+                            )
             else:
                 st.warning("No valid URLs found in the Excel file.")
     else:
