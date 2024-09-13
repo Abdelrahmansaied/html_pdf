@@ -47,7 +47,7 @@ def convert_urls_to_pdfs(urls, mpns):
                 image = Image.open(screenshot_path)
 
                 # Save the image to a PDF
-                pdf_path = f'{temp_dir}/{mpns[i].replace("/", "_").replace("\\", "_")}.pdf'
+                pdf_path = os.path.join(temp_dir, f'{mpns[i].replace("/", "_").replace("\\", "_")}.pdf')
                 image.convert('RGB').save(pdf_path)
 
                 # Store the PDF path for zipping later
@@ -82,21 +82,25 @@ if uploaded_file:
                     pdf_paths = convert_urls_to_pdfs(urls, mpns)
                     st.success("Conversion completed!")
 
-                    # Create a zip file to download all PDFs
-                    zip_buffer = io.BytesIO()
-                    with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
-                        for pdf_path in pdf_paths:
-                            zip_file.write(pdf_path, arcname=os.path.basename(pdf_path))  # Use only the filename
+                    # Check if any PDFs were created
+                    if not pdf_paths:
+                        st.warning("No PDF files were created.")
+                    else:
+                        # Create a zip file to download all PDFs
+                        zip_buffer = io.BytesIO()
+                        with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+                            for pdf_path in pdf_paths:
+                                zip_file.write(pdf_path, arcname=os.path.basename(pdf_path))  # Use only the filename
 
-                    zip_buffer.seek(0)  # Move to the beginning of the buffer
+                        zip_buffer.seek(0)  # Move to the beginning of the buffer
 
-                    # Provide a download button for the zip file
-                    st.download_button(
-                        label="Download All PDFs as a ZIP File",
-                        data=zip_buffer,
-                        file_name="pdfs.zip",
-                        mime='application/zip'
-                    )
+                        # Provide a download button for the zip file
+                        st.download_button(
+                            label="Download All PDFs as a ZIP File",
+                            data=zip_buffer,
+                            file_name="pdfs.zip",
+                            mime='application/zip'
+                        )
             else:
                 st.warning("No valid URLs found in the Excel file.")
     else:
