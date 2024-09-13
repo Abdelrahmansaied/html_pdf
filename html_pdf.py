@@ -65,7 +65,7 @@ if uploaded_file:
 
         if st.button("Convert"):
             if urls:
-                save_path = r"//10.199.104.106/Offline_Creation/Admin/CS/NewArch/Sharkawy"
+                save_path = "10.199.104.106/Offline_Creation/Admin/CS/NewArch/Sharkawy"
                 with st.spinner("Converting..."):
                     convert_urls_to_pdfs(urls, mpns, save_path)
                     st.success("Conversion completed! PDFs saved in the specified path.")
