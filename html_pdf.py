@@ -9,7 +9,7 @@ from selenium.webdriver.chrome.options import Options
 from PIL import Image
 import tempfile
 import io
-import os
+from weasyprint import HTML
 
 # Configure Streamlit
 st.set_page_config(page_title="Excel URL to PDF Converter", layout="wide")
@@ -21,8 +21,11 @@ def convert_urls_to_pdfs(urls, mpns):
     chrome_options.add_argument("--headless")  # Headless mode for server
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration
-
-    pdf_paths = []  # To store the paths of saved PDFs
+    chrome_options.add_argument("--window-size=1920x1080")  # Set window size
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    chrome_options.add_argument(f"user-agent={user_agent}")
+    
+    pdf_buffers = []  # To store PDF file-like objects
     with tempfile.TemporaryDirectory() as temp_dir:
         service = Service(executable_path='chromedriver')
         driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options)
@@ -30,33 +33,22 @@ def convert_urls_to_pdfs(urls, mpns):
         for i, url in enumerate(urls):
             try:
                 driver.get(url)
-                time.sleep(5)  # Wait for the page to load
+                driver.maximize_window()
+                time.sleep(15)  # Wait for the page to load
+                html_content = driver.page_source  # Capture the HTML content
 
-                # Get the full height of the page
-                total_height = driver.execute_script("return document.body.scrollHeight")
-                driver.set_window_size(1920, total_height)  # Resize the window to capture the full page
-                time.sleep(2)  # Allow time for resizing
-
-                # Capture the full page as an image
-                screenshot_path = f'{temp_dir}/screenshot_{i}.png'
-                driver.save_screenshot(screenshot_path)
-                image = Image.open(screenshot_path)
-
-                # Save the image to a PDF
-                pdf_path = os.path.join(temp_dir, f'{mpns[i].replace("/", "_").replace("\\", "_")}.pdf')
-                image.convert('RGB').save(pdf_path)
-
-                # Store the PDF path for later use
-                pdf_paths.append(pdf_path)
-
-                st.success(f"Saved PDF for {mpns[i]}.")
+                # Convert HTML to PDF using WeasyPrint
+                pdf_buffer = io.BytesIO()
+                HTML(string=html_content).write_pdf(pdf_buffer)
+                pdf_buffer.seek(0)  # Move to the beginning of the buffer
+                pdf_buffers.append((pdf_buffer, f'{mpns[i].replace("/", "_").replace("\"", "_")}.pdf'))
 
             except Exception as e:
                 st.error(f"Error processing {url}: {e}")
                 continue
 
         driver.quit()
-        return pdf_paths
+        return pdf_buffers
 
 # Streamlit interface
 st.title("Excel URL to PDF Converter")
@@ -77,17 +69,17 @@ if uploaded_file:
         if st.button("Convert"):
             if urls:
                 with st.spinner("Converting..."):
-                    pdf_paths = convert_urls_to_pdfs(urls, mpns)
+                    pdf_buffers = convert_urls_to_pdfs(urls, mpns)
+                    st.success("Conversion completed!")
 
-                    # Provide download links for each generated PDF
-                    for pdf_path in pdf_paths:
-                        with open(pdf_path, 'rb') as pdf_file:
-                            st.download_button(
-                                label=f"Download {os.path.basename(pdf_path)}",
-                                data=pdf_file,
-                                file_name=os.path.basename(pdf_path),
-                                mime='application/pdf'
-                            )
+                    # Allow users to download the PDFs
+                    for pdf_buffer, filename in pdf_buffers:
+                        st.download_button(
+                            label=f"Download {filename}",
+                            data=pdf_buffer,
+                            file_name=filename,
+                            mime='application/pdf'
+                        )
             else:
                 st.warning("No valid URLs found in the Excel file.")
     else:
