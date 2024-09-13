@@ -4,5 +4,4 @@ pillow
 pandas
 openpyxl
 webdriver-manager
-PyPDF2
-weasyprint
+googletrans==4.0.0-rc1
