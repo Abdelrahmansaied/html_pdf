@@ -9,6 +9,7 @@ from selenium.webdriver.chrome.options import Options
 from PIL import Image
 import tempfile
 import io
+from PyPDF2 import PdfWriter
 
 # Configure Streamlit
 st.set_page_config(page_title="Excel URL to PDF Converter", layout="wide")
@@ -32,13 +33,17 @@ def convert_urls_to_pdfs(urls, mpns):
         for i, url in enumerate(urls):
             try:
                 driver.get(url)
-                driver.maximize_window()
                 time.sleep(15)  # Wait for the page to load
+
+                # Set the window size to the full page size
+                driver.set_window_size(1920, 1080)  # Adjust as needed
+
+                # Capture the full page as an image
                 screenshot_path = f'{temp_dir}/screenshot_{i}.png'
                 driver.save_screenshot(screenshot_path)
                 image = Image.open(screenshot_path)
-                
-                # Save the image to a bytes buffer
+
+                # Save the image to a bytes buffer as PDF
                 pdf_buffer = io.BytesIO()
                 image.convert('RGB').save(pdf_buffer, format='PDF')
                 pdf_buffer.seek(0)  # Move to the beginning of the buffer
@@ -73,14 +78,26 @@ if uploaded_file:
                     pdf_buffers = convert_urls_to_pdfs(urls, mpns)
                     st.success("Conversion completed!")
 
-                    # Allow users to download the PDFs
+                    # Create a combined PDF file
+                    combined_pdf_buffer = io.BytesIO()
+                    pdf_writer = PdfWriter()
+
                     for pdf_buffer, filename in pdf_buffers:
-                        st.download_button(
-                            label=f"Download {filename}",
-                            data=pdf_buffer,
-                            file_name=filename,
-                            mime='application/pdf'
-                        )
+                        # Add each PDF to the writer
+                        pdf_buffer.seek(0)  # Ensure we read from the beginning
+                        pdf_writer.append(pdf_buffer)
+
+                    # Write the combined PDF to a BytesIO buffer
+                    pdf_writer.write(combined_pdf_buffer)
+                    combined_pdf_buffer.seek(0)  # Move to the beginning of the buffer
+
+                    # Provide a download button for the combined PDF
+                    st.download_button(
+                        label="Download All PDFs as One File",
+                        data=combined_pdf_buffer,
+                        file_name="combined_pdfs.pdf",
+                        mime='application/pdf'
+                    )
             else:
                 st.warning("No valid URLs found in the Excel file.")
     else:
