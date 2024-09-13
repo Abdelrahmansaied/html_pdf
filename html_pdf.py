@@ -10,6 +10,7 @@ from PIL import Image
 import tempfile
 import io
 import zipfile
+import os
 
 # Configure Streamlit
 st.set_page_config(page_title="Excel URL to PDF Converter", layout="wide")
