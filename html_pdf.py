@@ -23,7 +23,9 @@ def convert_urls_to_pdfs(urls, mpns, save_path):
     chrome_options.add_argument("--window-size=1920x1080")  # Set window size
     user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     chrome_options.add_argument(f"user-agent={user_agent}")
+    
     # Create a temporary directory to store screenshots and PDFs
+    pdf_paths = []
     with tempfile.TemporaryDirectory() as temp_dir:
         service = Service(executable_path='chromedriver')
         driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options)
@@ -39,13 +41,16 @@ def convert_urls_to_pdfs(urls, mpns, save_path):
                 driver.save_screenshot(screenshot_path)
                 image = Image.open(screenshot_path)
                 image.convert('RGB').save(pdf_path)
+                
+                # Store the path of the generated PDF
+                pdf_paths.append(pdf_path)
 
             except Exception as e:
                 st.error(f"Error processing {url}: {e}")
                 continue
 
         driver.quit()
-        return save_path
+        return pdf_paths
 
 # Streamlit interface
 st.title("Excel URL to PDF Converter")
@@ -65,10 +70,24 @@ if uploaded_file:
 
         if st.button("Convert"):
             if urls:
-                save_path = r"C:/report"  # This directory should exist in your repo
+                # Set the relative path for saving PDFs
+                save_path = "output_pdfs"  # Ensure this directory is created
+                os.makedirs(save_path, exist_ok=True)  # Create directory if it doesn't exist
+                
                 with st.spinner("Converting..."):
-                    convert_urls_to_pdfs(urls, mpns, save_path)
-                    st.success("Conversion completed! PDFs saved in the specified path.")
+                    pdf_paths = convert_urls_to_pdfs(urls, mpns, save_path)
+                    st.success("Conversion completed!")
+
+                    # Allow users to download the PDFs
+                    for pdf_path in pdf_paths:
+                        pdf_filename = os.path.basename(pdf_path)
+                        with open(pdf_path, 'rb') as pdf_file:
+                            st.download_button(
+                                label=f"Download {pdf_filename}",
+                                data=pdf_file,
+                                file_name=pdf_filename,
+                                mime='application/pdf'
+                            )
             else:
                 st.warning("No valid URLs found in the Excel file.")
     else:
