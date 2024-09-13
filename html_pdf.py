@@ -9,7 +9,6 @@ from selenium.webdriver.chrome.options import Options
 from PIL import Image
 import tempfile
 import io
-from weasyprint import HTML
 
 # Configure Streamlit
 st.set_page_config(page_title="Excel URL to PDF Converter", layout="wide")
@@ -29,17 +28,28 @@ def convert_urls_to_pdfs(urls, mpns):
     with tempfile.TemporaryDirectory() as temp_dir:
         service = Service(executable_path='chromedriver')
         driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options)
-        
+
         for i, url in enumerate(urls):
             try:
                 driver.get(url)
-                driver.maximize_window()
                 time.sleep(15)  # Wait for the page to load
-                html_content = driver.page_source  # Capture the HTML content
+                
+                # Capture the full height of the page
+                driver.execute_script("document.body.style.zoom='100%';")  # Optional: Adjust zoom level
+                time.sleep(1)  # Delay for adjustments
 
-                # Convert HTML to PDF using WeasyPrint
+                # Get the dimensions of the entire page
+                total_height = driver.execute_script("return document.body.scrollHeight")
+                driver.set_window_size(1920, total_height)  # Resize the window to capture the full page
+                
+                # Save a screenshot of the full page
+                screenshot_path = f'{temp_dir}/screenshot_{i}.png'
+                driver.save_screenshot(screenshot_path)
+                image = Image.open(screenshot_path)
+
+                # Save the image to a bytes buffer to convert to PDF
                 pdf_buffer = io.BytesIO()
-                HTML(string=html_content).write_pdf(pdf_buffer)
+                image.convert('RGB').save(pdf_buffer, format='PDF')
                 pdf_buffer.seek(0)  # Move to the beginning of the buffer
                 pdf_buffers.append((pdf_buffer, f'{mpns[i].replace("/", "_").replace("\"", "_")}.pdf'))
 
