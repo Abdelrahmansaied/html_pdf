@@ -65,7 +65,7 @@ if uploaded_file:
 
         if st.button("Convert"):
             if urls:
-                save_path = r"C:\report"
+                save_path = "output_pdfs"  # This directory should exist in your repo
                 with st.spinner("Converting..."):
                     convert_urls_to_pdfs(urls, mpns, save_path)
                     st.success("Conversion completed! PDFs saved in the specified path.")
