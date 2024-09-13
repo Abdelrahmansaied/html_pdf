@@ -34,7 +34,7 @@ def convert_urls_to_pdfs(urls, mpns, save_path):
                 driver.maximize_window()
                 time.sleep(15)  # Wait for the page to load
                 screenshot_path = os.path.join(temp_dir, f'screenshot_{i}.png')
-                pdf_path = os.path.join(save_path, f'{mpns[i]}.pdf')
+                pdf_path = os.path.join(save_path, f'{mpns[i].replace("/", "_").replace("\\", "_")}.pdf')
 
                 driver.save_screenshot(screenshot_path)
                 image = Image.open(screenshot_path)
@@ -65,7 +65,7 @@ if uploaded_file:
 
         if st.button("Convert"):
             if urls:
-                save_path = r"\\10.199.104.106\Offline_Creation\Admin\CS\NewArch\Sharkawy"
+                save_path = r"//10.199.104.106/Offline_Creation/Admin/CS/NewArch/Sharkawy"
                 with st.spinner("Converting..."):
                     convert_urls_to_pdfs(urls, mpns, save_path)
                     st.success("Conversion completed! PDFs saved in the specified path.")
