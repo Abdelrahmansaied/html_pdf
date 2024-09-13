@@ -1,6 +1,7 @@
 import streamlit as st
 import time
 import os
+import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -8,19 +9,22 @@ from PIL import Image
 import tempfile
 
 # Configure Streamlit
-st.set_page_config(page_title="HTML to PDF Converter", layout="wide")
+st.set_page_config(page_title="Excel URL to PDF Converter", layout="wide")
 
 # Function to convert URLs to PDFs
-def convert_urls_to_pdfs(urls):
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    
+def convert_urls_to_pdfs(urls, mpns, save_path):
+    chrome_options = Options()
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--headless")  # Headless mode for server
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration
+    chrome_options.add_argument("--window-size=1920x1080")  # Set window size
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    chrome_options.add_argument(f"user-agent={user_agent}")
     # Create a temporary directory to store screenshots and PDFs
     with tempfile.TemporaryDirectory() as temp_dir:
         service = Service(executable_path='chromedriver')
-        driver = webdriver.Chrome(service=service, options=options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options)
         
         for i, url in enumerate(urls):
             try:
@@ -28,7 +32,7 @@ def convert_urls_to_pdfs(urls):
                 driver.maximize_window()
                 time.sleep(15)  # Wait for the page to load
                 screenshot_path = os.path.join(temp_dir, f'screenshot_{i}.png')
-                pdf_path = os.path.join(temp_dir, f'document_{i}.pdf')
+                pdf_path = os.path.join(save_path, f'{mpns[i]}.pdf')
 
                 driver.save_screenshot(screenshot_path)
                 image = Image.open(screenshot_path)
@@ -39,31 +43,31 @@ def convert_urls_to_pdfs(urls):
                 continue
 
         driver.quit()
-        return temp_dir
+        return save_path
 
 # Streamlit interface
-st.title("HTML to PDF Converter")
-st.write("Convert HTML pages to PDF files by entering URLs below.")
+st.title("Excel URL to PDF Converter")
+st.write("Upload an Excel file containing URLs and MPNs.")
 
-# Input for URLs
-urls_input = st.text_area("Enter URLs (one per line):", height=200)
-urls = [url.strip() for url in urls_input.splitlines() if url]
+# Upload Excel file
+uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx"])
 
-if st.button("Convert"):
-    if urls:
-        with st.spinner("Converting..."):
-            temp_dir = convert_urls_to_pdfs(urls)
-            st.success("Conversion completed!")
+if uploaded_file:
+    # Read the Excel file
+    df = pd.read_excel(uploaded_file)
+    
+    # Check for required columns
+    if 'URL' in df.columns and 'MPN' in df.columns:
+        urls = df['URL'].dropna().tolist()
+        mpns = df['MPN'].dropna().tolist()
 
-            # Allow users to download PDFs
-            for i in range(len(urls)):
-                pdf_path = os.path.join(temp_dir, f'document_{i}.pdf')
-                with open(pdf_path, 'rb') as pdf_file:
-                    st.download_button(
-                        label=f"Download PDF for {urls[i]}",
-                        data=pdf_file,
-                        file_name=f'document_{i}.pdf',
-                        mime='application/pdf'
-                    )
+        if st.button("Convert"):
+            if urls:
+                save_path = r"\\10.199.104.106\Offline_Creation\Admin\CS\NewArch\Sharkawy"
+                with st.spinner("Converting..."):
+                    convert_urls_to_pdfs(urls, mpns, save_path)
+                    st.success("Conversion completed! PDFs saved in the specified path.")
+            else:
+                st.warning("No valid URLs found in the Excel file.")
     else:
-        st.warning("Please enter at least one URL.")
+        st.error("Excel file must contain 'URL' and 'MPN' columns.")
