@@ -38,11 +38,15 @@ def translate_page_content(driver):
     # Get the full HTML of the page
     original_content = driver.page_source
 
-    # Translate the content
-    translated_content = translator.translate(original_content, dest='en').text  # Change 'en' to your desired language
+    # Check if the content is valid
+    if original_content:
+        # Translate the content
+        translated_content = translator.translate(original_content, dest='en').text  # Change 'en' to your desired language
 
-    # Update the page with the translated content
-    driver.execute_script("document.documentElement.innerHTML = arguments[0];", translated_content)
+        # Update the page with the translated content
+        driver.execute_script("document.documentElement.innerHTML = arguments[0];", translated_content)
+    else:
+        st.error("The page content is empty or invalid.")
 
 # Function to convert URLs to PDFs
 def convert_urls_to_pdfs(urls, mpns):
