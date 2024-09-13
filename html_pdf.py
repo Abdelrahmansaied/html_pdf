@@ -17,7 +17,7 @@ st.set_page_config(page_title="Excel URL to PDF Converter", layout="wide")
 
 # Function to close cookie consent pop-ups
 def close_cookie_consent(driver):
-    keywords = ["I agree", "OK", "I consent", "Cookies"]
+    keywords = ["I agree", "OK", "I consent", "Cookies","Alle"]
     elements = driver.find_elements(By.XPATH, "//*")  # Get all elements
 
     for element in elements:
@@ -73,7 +73,7 @@ def convert_urls_to_pdfs(urls, mpns):
                 close_cookie_consent(driver)
 
                 # Translate the page content
-                translate_page_content(driver)
+                #translate_page_content(driver)
                 time.sleep(2)  # Give time for the page to be updated with translated content
 
                 # Capture the full height of the page
