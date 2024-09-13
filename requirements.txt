@@ -3,3 +3,4 @@ selenium
 pillow
 pandas
 openpyxl
+webdriver-manager
