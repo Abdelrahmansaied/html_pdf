@@ -122,7 +122,7 @@ def convert_urls_to_pdfs(urls, mpns):
         return pdf_buffers
 
 # Streamlit interface
-st.title("Excel URL to PDF Converter")
+st.title("HTML to PDF Converter")
 st.write("Upload an Excel file containing URLs and MPNs.")
 
 # Upload Excel file
