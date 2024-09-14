@@ -3,6 +3,7 @@ import time
 import pandas as pd
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
 from webdriver_manager.core.os_manager import ChromeType
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -18,7 +19,7 @@ st.set_page_config(page_title="Excel URL to PDF Converter", layout="wide")
 # Function to close cookie consent pop-ups
 def close_cookie_consent(driver):
     keywords = ["I agree", "OK", "I consent", "Cookies","Alle"]
-    elements = driver.find_elements(By.XPATH, "//*")  # Get all elements
+    elements = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*")))
 
     for element in elements:
         if any(keyword.lower() in element.text.lower() for keyword in keywords):
