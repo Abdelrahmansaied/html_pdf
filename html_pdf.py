@@ -57,23 +57,14 @@ def translate_page_content(driver):
 
 # Function to convert URLs to PDFs
 def convert_urls_to_pdfs(urls, mpns):
-    user_agents = [
-      "Mozilla/5.0 (Windows NT 10.0; rv:91.0) Gecko/20100101 Firefox/91.0",
-      "Mozilla/5.0 (Windows NT 10.0; rv:78.0) Gecko/20100101 Firefox/78.0",
-      "Mozilla/5.0 (X11; Linux x86_64; rv:95.0) Gecko/20100101 Firefox/95.0"
-      ]
-    random_user_agent = np.random.choice(user_agents)
-    headers = {
-        'User-Agent': random_user_agent
-    }
     windows_useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36"
     chrome_options = Options()
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument(f'user-agent={random_user_agent}')
+    chrome_options.add_argument(f'user-agent={windows_useragent}')
     chrome_options.add_argument("--disable-web-security")
     chrome_options.add_argument("--disable-xss-auditor")
-    chrome_options.headless = False
+    chrome_options.headless = True
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration
     chrome_options.add_argument("--window-size=1920x1080")  # Set window size
