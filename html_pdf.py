@@ -65,6 +65,9 @@ def convert_urls_to_pdfs(urls, mpns):
     chrome_options.add_argument("--disable-web-security")
     chrome_options.add_argument("--disable-xss-auditor")
     chrome_options.headless = True
+    chrome_options.add_argument("--headless")  # Run in headless mode
+    chrome_options.add_argument("--remote-debugging-port=9222")  # For debugging
+    chrome_options.add_argument("--disable-extensions")  # Disable extensions
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")  # Disable GPU acceleration
     chrome_options.add_argument("--window-size=1920x1080")  # Set window size
