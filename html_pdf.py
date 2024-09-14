@@ -79,10 +79,11 @@ def convert_urls_to_pdfs(urls, mpns):
 
                 # Close any cookie consent pop-up
                 close_cookie_consent(driver)
+                time.sleep(3)  # Wait for the page to load
 
                 # Translate the page content
                 #translate_page_content(driver)
-                time.sleep(2)  # Give time for the page to be updated with translated content
+                time.sleep(8)  # Give time for the page to be updated with translated content
 
                 # Capture the full height of the page
                 driver.execute_script("document.body.style.zoom='100%';")  # Adjust zoom level
