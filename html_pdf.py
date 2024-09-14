@@ -133,7 +133,7 @@ def convert_urls_to_pdfs(urls, mpns):
         for i, url in enumerate(urls):
             try:
                 driver.get(url)
-                driver.execute_script(content_js)
+                driver.execute_script(contentjs)
                 time.sleep(random.uniform(1, 3))  # Wait for the page to load
 
                 # Close any cookie consent pop-up
