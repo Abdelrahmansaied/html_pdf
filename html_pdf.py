@@ -16,7 +16,7 @@ from googletrans import Translator
 from selenium.webdriver.common.by import By
 
 # Configure Streamlit
-st.set_page_config(page_title="Excel URL to PDF Converter", layout="wide")
+st.set_page_config(page_title="HTML to PDF Converter", layout="wide")
 
 # Function to close cookie consent pop-ups
 def close_cookie_consent(driver):
@@ -56,7 +56,9 @@ def translate_page_content(driver):
 
 # Function to convert URLs to PDFs
 def convert_urls_to_pdfs(urls, mpns):
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     chrome_options = Options()
+    chrome_options.add_argument(f"user-agent={user_agent}")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--headless")  # Headless mode for server
     chrome_options.add_argument("--disable-dev-shm-usage")
