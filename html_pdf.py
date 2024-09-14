@@ -5,6 +5,7 @@ import pandas as pd
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
+from webdriver_manager.core.os_manager import ChromeType
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from PIL import Image
@@ -46,7 +47,7 @@ def convert_urls_to_pdfs(urls, mpns):
 
     pdf_buffers = []
     with tempfile.TemporaryDirectory() as temp_dir:
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options)
 
         for i, url in enumerate(urls):
             try:
