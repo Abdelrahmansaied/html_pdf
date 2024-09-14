@@ -1,5 +1,6 @@
 import streamlit as st
 import time
+import random
 import pandas as pd
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
