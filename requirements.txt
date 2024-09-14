@@ -4,4 +4,4 @@ pillow
 pandas
 openpyxl
 webdriver-manager
-boto3
+zipfile
