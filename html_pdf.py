@@ -11,6 +11,13 @@ from selenium.webdriver.common.by import By
 from PIL import Image
 import tempfile
 import io
+import boto3
+import os
+
+# AWS S3 configuration
+AWS_ACCESS_KEY = 'AKIA5MVDKQBEDJMHPL6K'
+AWS_SECRET_KEY = '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'
+S3_BUCKET_NAME = '1abdo'
 
 # Configure Streamlit
 st.set_page_config(page_title="HTML to PDF Converter", layout="wide")
@@ -24,12 +31,16 @@ def close_cookie_consent(driver):
     for element in elements:
         try:
             element.click()
-            print(f"Clicked on: {element.text}")  # Debugging output
             return True  # Consent pop-up was closed
-        except Exception as e:
-            print(f"Error clicking element: {e}")  # Handle exceptions
+        except Exception:
             continue
     return False  # No consent element found
+
+# Function to upload file to S3
+def upload_to_s3(file_buffer, filename):
+    s3_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY,
+                              aws_secret_access_key=AWS_SECRET_KEY)
+    s3_client.upload_fileobj(file_buffer, S3_BUCKET_NAME, filename)
 
 # Function to convert URLs to PDFs
 def convert_urls_to_pdfs(urls, mpns):
@@ -38,14 +49,10 @@ def convert_urls_to_pdfs(urls, mpns):
     options.add_argument(f"user-agent={user_agent}")
     options.add_argument("--window-size=1920,1080")
     options.add_argument("--disable-extensions")
-    options.add_argument("--start-maximized")
-    options.add_argument('--headless')  # Comment this out if you want to see the browser
+    options.add_argument('--headless')  # Run in headless mode
     options.add_argument('--disable-gpu')
     options.add_argument('--disable-dev-shm-usage')
     options.add_argument('--no-sandbox')
-    options.add_argument('--ignore-certificate-errors')
-    options.add_argument('--disable-web-security')
-    options.add_argument('--allow-running-insecure-content')
 
     pdf_buffers = []
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -54,24 +61,29 @@ def convert_urls_to_pdfs(urls, mpns):
         for i, url in enumerate(urls):
             try:
                 driver.get(url)
-                time.sleep(random.uniform(1, 3))  # Wait for the page to load
+                time.sleep(random.uniform(1, 3))
                 close_cookie_consent(driver)
-                time.sleep(random.uniform(1, 3))  # Wait for a while after consent closure
+                time.sleep(random.uniform(1, 3))
 
                 driver.execute_script("document.body.style.zoom='110%';")
-                time.sleep(random.uniform(1, 3))  # Give time for adjustments
+                time.sleep(random.uniform(1, 3))
 
                 total_height = driver.execute_script("return document.body.scrollHeight")
                 driver.set_window_size(1920, total_height)
 
+                # Capture screenshot and convert to PDF
                 screenshot_path = f'{temp_dir}/screenshot_{i}.png'
                 driver.save_screenshot(screenshot_path)
                 image = Image.open(screenshot_path)
 
                 pdf_buffer = io.BytesIO()
                 image.convert('RGB').save(pdf_buffer, format='PDF')
-                pdf_buffer.seek(0)  # Move to the beginning of the buffer
-                pdf_buffers.append((pdf_buffer, f'{mpns[i]}.pdf'))
+                pdf_buffer.seek(0)
+
+                # Upload to S3
+                filename = f'{mpns[i]}.pdf'
+                upload_to_s3(pdf_buffer, filename)
+                pdf_buffers.append(f's3://{S3_BUCKET_NAME}/{filename}')
 
             except Exception as e:
                 st.error(f"Error processing {url}: {e}")
@@ -99,13 +111,12 @@ if uploaded_file:
                     pdf_buffers = convert_urls_to_pdfs(urls, mpns)
                     st.success("Conversion completed!")
 
-                    for pdf_buffer, filename in pdf_buffers:
-                        st.download_button(
-                            label=f"Download {filename}",
-                            data=pdf_buffer,
-                            file_name=filename,
-                            mime='application/pdf'
-                        )
+                    # Provide a download link for all PDFs in S3
+                    st.subheader("Download Links:")
+                    for filename in pdf_buffers:
+                        download_link = f'<a href="{filename}" target="_blank">Download {os.path.basename(filename)}</a>'
+                        st.markdown(download_link, unsafe_allow_html=True)
+
             else:
                 st.warning("No valid URLs found in the Excel file.")
     else:
