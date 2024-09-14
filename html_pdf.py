@@ -65,8 +65,7 @@ def convert_urls_to_pdfs(urls, mpns):
     chrome_options.add_argument(f'user-agent={windows_useragent}')
     chrome_options.add_argument("--disable-web-security")
     chrome_options.add_argument("--disable-xss-auditor")
-    chrome_options.headless = True
-    chrome_options.add_argument("--headless")  # Run in headless mode
+    #chrome_options.add_argument("--headless")  # Run in headless mode
     chrome_options.add_argument("--remote-debugging-port=9222")  # For debugging
     chrome_options.add_argument("--disable-extensions")  # Disable extensions
     chrome_options.add_argument("--disable-dev-shm-usage")
