@@ -16,7 +16,61 @@ import numpy as np
 import io
 from googletrans import Translator
 from selenium.webdriver.common.by import By
+contentjs="""
+// content.js
 
+// Mock navigator.languages and navigator.plugins
+Object.defineProperty(navigator, 'languages', {
+    get: function() {
+        return ['en-US', 'en'];
+    }
+});
+
+Object.defineProperty(navigator, 'plugins', {
+    get: function() {
+        return [1, 2, 3, 4, 5]; // Length > 0
+    }
+});
+
+// Mock WebGL rendering context
+const getParameter = WebGLRenderingContext.prototype.getParameter;
+WebGLRenderingContext.prototype.getParameter = function(parameter) {
+    if (parameter === 37445) {
+        return 'Intel Open Source Technology Center'; // UNMASKED_VENDOR_WEBGL
+    }
+    if (parameter === 37446) {
+        return 'Mesa DRI Intel(R) Ivybridge Mobile '; // UNMASKED_RENDERER_WEBGL
+    }
+    return getParameter.call(this, parameter);
+};
+
+// Mock broken image dimensions
+['height', 'width'].forEach(property => {
+    const imageDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, property);
+    Object.defineProperty(HTMLImageElement.prototype, property, {
+        ...imageDescriptor,
+        get: function() {
+            if (this.complete && this.naturalHeight == 0) {
+                return 20; // Non-zero dimension for broken images
+            }
+            return imageDescriptor.get.call(this);
+        }
+    });
+});
+
+// Mock offsetHeight for retina detection
+const elementDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetHeight');
+Object.defineProperty(HTMLDivElement.prototype, 'offsetHeight', {
+    ...elementDescriptor,
+    get: function() {
+        if (this.id === 'modernizr') {
+            return 1; // Pass retina detection
+        }
+        return elementDescriptor.get.call(this);
+    }
+});
+
+"""
 # Configure Streamlit
 st.set_page_config(page_title="HTML to PDF Converter", layout="wide")
 
@@ -58,11 +112,11 @@ def translate_page_content(driver):
 
 # Function to convert URLs to PDFs
 def convert_urls_to_pdfs(urls, mpns):
-    windows_useragent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36"
     chrome_options = Options()
+    options.add_argument("--proxy-server=localhost:8080") 
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument(f'user-agent={windows_useragent}')
+    options.add_argument("user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36")
     chrome_options.add_argument("--disable-web-security")
     chrome_options.add_argument("--disable-xss-auditor")
     #chrome_options.add_argument("--headless")  # Run in headless mode
@@ -79,6 +133,7 @@ def convert_urls_to_pdfs(urls, mpns):
         for i, url in enumerate(urls):
             try:
                 driver.get(url)
+                driver.execute_script(content_js)
                 time.sleep(random.uniform(1, 3))  # Wait for the page to load
 
                 # Close any cookie consent pop-up
