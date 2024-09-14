@@ -20,9 +20,11 @@ st.set_page_config(page_title="Excel URL to PDF Converter", layout="wide")
 
 # Function to close cookie consent pop-ups
 def close_cookie_consent(driver):
-    keywords = ["I agree", "OK", "I consent", "Cookies","Alle"]
-    elements = WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//*")))
-
+    keywords = ["I agree", "OK", "I consent", "Cookies", "Alle"]
+    
+    # Wait until any elements are present and fetch them
+    elements = WebDriverWait(driver, 10).until(EC.presence_of_all_elements_located((By.XPATH, "//*")))
+    
     for element in elements:
         if any(keyword.lower() in element.text.lower() for keyword in keywords):
             try:
@@ -33,6 +35,7 @@ def close_cookie_consent(driver):
                 print(f"Error clicking element: {e}")  # Handle exceptions
                 continue  # If clicking fails, continue searching
     return False  # No consent element found
+
 
 # Function to translate page content
 def translate_page_content(driver):
