@@ -1,9 +1,7 @@
 streamlit
-setuptools
 selenium
 pillow
 pandas
 openpyxl
 webdriver-manager
 googletrans==4.0.0-rc1
-undetected-chromedriver
