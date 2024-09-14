@@ -2,7 +2,7 @@ import streamlit as st
 import time
 import random
 import pandas as pd
-import undetected_chromedriver.v2 as uc  # Use undetected-chromedriver
+import undetected_chromedriver as uc  # Use undetected-chromedriver
 from selenium.webdriver.common.by import By
 from PIL import Image
 import tempfile
