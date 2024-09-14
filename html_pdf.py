@@ -11,13 +11,7 @@ from selenium.webdriver.common.by import By
 from PIL import Image
 import tempfile
 import io
-import boto3
-import os
-
-# AWS S3 configuration
-AWS_ACCESS_KEY = 'AKIA5MVDKQBEDJMHPL6K'
-AWS_SECRET_KEY = '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'
-S3_BUCKET_NAME = '1abdo'
+import zipfile
 
 # Configure Streamlit
 st.set_page_config(page_title="HTML to PDF Converter", layout="wide")
@@ -31,30 +25,17 @@ def close_cookie_consent(driver):
     for element in elements:
         try:
             element.click()
-            return True  # Consent pop-up was closed
+            return True
         except Exception:
             continue
-    return False  # No consent element found
-
-# Function to upload file to S3
-def upload_to_s3(file_buffer, filename):
-    s3_client = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY,
-                              aws_secret_access_key=AWS_SECRET_KEY)
-    s3_client.upload_fileobj(file_buffer, S3_BUCKET_NAME, filename)
+    return False
 
 # Function to convert URLs to PDFs
 def convert_urls_to_pdfs(urls, mpns):
     options = Options()
-    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"
-    options.add_argument(f"user-agent={user_agent}")
-    options.add_argument("--window-size=1920,1080")
-    options.add_argument("--disable-extensions")
-    options.add_argument('--headless')  # Run in headless mode
-    options.add_argument('--disable-gpu')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--no-sandbox')
-
-    pdf_buffers = []
+    options.add_argument("--headless")
+    pdf_files = []
+    
     with tempfile.TemporaryDirectory() as temp_dir:
         driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
 
@@ -65,32 +46,26 @@ def convert_urls_to_pdfs(urls, mpns):
                 close_cookie_consent(driver)
                 time.sleep(random.uniform(1, 3))
 
-                driver.execute_script("document.body.style.zoom='110%';")
-                time.sleep(random.uniform(1, 3))
-
                 total_height = driver.execute_script("return document.body.scrollHeight")
                 driver.set_window_size(1920, total_height)
 
                 # Capture screenshot and convert to PDF
                 screenshot_path = f'{temp_dir}/screenshot_{i}.png'
                 driver.save_screenshot(screenshot_path)
-                image = Image.open(screenshot_path)
-
                 pdf_buffer = io.BytesIO()
+                image = Image.open(screenshot_path)
                 image.convert('RGB').save(pdf_buffer, format='PDF')
                 pdf_buffer.seek(0)
 
-                # Upload to S3
-                filename = f'{mpns[i]}.pdf'
-                upload_to_s3(pdf_buffer, filename)
-                pdf_buffers.append(f's3://{S3_BUCKET_NAME}/{filename}')
+                # Prepare filename for saving
+                pdf_filename = f'{mpns[i]}.pdf'
+                pdf_files.append((pdf_filename, pdf_buffer))
 
             except Exception as e:
                 st.error(f"Error processing {url}: {e}")
-                continue
 
         driver.quit()
-        return pdf_buffers
+        return pdf_files
 
 # Streamlit interface
 st.title("HTML to PDF Converter")
@@ -108,14 +83,24 @@ if uploaded_file:
         if st.button("Convert"):
             if urls:
                 with st.spinner("Converting..."):
-                    pdf_buffers = convert_urls_to_pdfs(urls, mpns)
+                    pdf_files = convert_urls_to_pdfs(urls, mpns)
                     st.success("Conversion completed!")
 
-                    # Provide a download link for all PDFs in S3
-                    st.subheader("Download Links:")
-                    for filename in pdf_buffers:
-                        download_link = f'<a href="{filename}" target="_blank">Download {os.path.basename(filename)}</a>'
-                        st.markdown(download_link, unsafe_allow_html=True)
+                    # Create a temporary zip file
+                    with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as zip_file:
+                        with zipfile.ZipFile(zip_file, 'w') as zf:
+                            for pdf_filename, pdf_buffer in pdf_files:
+                                pdf_buffer.seek(0)
+                                zf.writestr(pdf_filename, pdf_buffer.read())
+
+                    # Provide download link for the zip file
+                    with open(zip_file.name, "rb") as f:
+                        st.download_button(
+                            label="Download All PDFs",
+                            data=f,
+                            file_name="converted_pdfs.zip",
+                            mime="application/zip",
+                        )
 
             else:
                 st.warning("No valid URLs found in the Excel file.")
