@@ -47,7 +47,7 @@ def convert_urls_to_pdfs(urls, mpns):
 
     pdf_buffers = []
     with tempfile.TemporaryDirectory() as temp_dir:
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options)
+        driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
 
         for i, url in enumerate(urls):
             try:
