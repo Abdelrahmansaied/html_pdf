@@ -79,19 +79,19 @@ def convert_urls_to_pdfs(urls, mpns):
         for i, url in enumerate(urls):
             try:
                 driver.get(url)
-                time.sleep(3)  # Wait for the page to load
+               time.sleep(random.uniform(1, 3))  # Wait for the page to load
 
                 # Close any cookie consent pop-up
                 close_cookie_consent(driver)
-                time.sleep(2)  # Wait for the page to load
+                time.sleep(random.uniform(1, 3))  # Wait for the page to load
 
                 # Translate the page content
                 #translate_page_content(driver)
-                time.sleep(2)  # Give time for the page to be updated with translated content
+                time.sleep(random.uniform(1, 3))  # Give time for the page to be updated with translated content
 
                 # Capture the full height of the page
                 driver.execute_script("document.body.style.zoom='100%';")  # Adjust zoom level
-                time.sleep(2)  # Delay for adjustments
+                time.sleep(random.uniform(1, 3))  # Delay for adjustments
 
                 # Get the dimensions of the entire page
                 total_height = driver.execute_script("return document.body.scrollHeight")
