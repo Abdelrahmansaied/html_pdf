@@ -116,7 +116,7 @@ def convert_urls_to_pdfs(urls, mpns):
     chrome_options.add_argument("--proxy-server=localhost:8080") 
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--no-sandbox")
-    options.add_argument("user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36")
+    chrome_options.add_argument("user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36")
     chrome_options.add_argument("--disable-web-security")
     chrome_options.add_argument("--disable-xss-auditor")
     chrome_options.add_argument("--headless")  # Run in headless mode
