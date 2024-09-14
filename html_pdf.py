@@ -7,6 +7,7 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.core.os_manager import ChromeType
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.wait import WebDriverWait
 from PIL import Image
 import tempfile
 import io
