@@ -1,4 +1,5 @@
 streamlit
+setuptools
 selenium
 pillow
 pandas
