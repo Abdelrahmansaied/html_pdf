@@ -113,7 +113,7 @@ def translate_page_content(driver):
 # Function to convert URLs to PDFs
 def convert_urls_to_pdfs(urls, mpns):
     chrome_options = Options()
-    chrome_options.add_argument("--proxy-server=localhost:8080") 
+    #chrome_options.add_argument("--proxy-server=localhost:8080") 
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36")
