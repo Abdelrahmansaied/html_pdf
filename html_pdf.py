@@ -61,9 +61,12 @@ def detect_language_from_url(url):
     try:
         with webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options) as driver:
             driver.get(url)
+            st.success("Got URL for langdetect!",url)
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
             html = driver.page_source
+            st.success("Got html content for langdetect!",html)
             text = BeautifulSoup(html, 'html.parser').get_text(separator=' ', strip=True)
+            st.success("Got text content for langdetect!",text)
             detected_lang = detect(text)
             return detected_lang
     except Exception as e:
