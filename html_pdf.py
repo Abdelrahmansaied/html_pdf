@@ -96,8 +96,7 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
     pdf_paths = []
     output_data = []
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options) 
     for i, url in enumerate(urls):
         try:
             detected_lang = detect_language_from_url(url)
