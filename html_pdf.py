@@ -1,78 +1,171 @@
 import streamlit as st
+import pandas as pd
+import os
 import time
 import random
-import pandas as pd
+import tempfile
+import zipfile
+from PIL import Image
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.core.os_manager import ChromeType
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from PIL import Image
-import tempfile
-import io
-import zipfile
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from langdetect import detect, DetectorFactory
+from bs4 import BeautifulSoup
 
-# Configure Streamlit
-st.set_page_config(page_title="HTML to PDF Converter", layout="wide")
+# Ensure consistent language detection
+DetectorFactory.seed = 0
 
 # Function to close cookie consent pop-ups
 def close_cookie_consent(driver):
-    elem1 = driver.find_elements(By.XPATH, "//*[contains(text(), 'Accept')]")
-    elem2 = driver.find_elements(By.XPATH, "//*[contains(text(), 'I accept')]")
-    elements = elem1 + elem2     
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located(
+                (By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'akzeptieren')]"))).click()
+        
+    except:
+        pass
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located(
+                (By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'accept')]"))).click()
+        
+    except:
+        pass
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located(
+                (By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'consent')]"))).click()
+        
+    except:
+        pass
+    try:
+        WebDriverWait(driver, 10).until(
+            EC.visibility_of_element_located(
+                (By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'agree')]"))).click()
+        
+    except:
+        pass
 
-    for element in elements:
+def detect_language_from_url(url):
+    options = Options()
+    options.add_argument("--headless")  # Run in headless mode
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36")
+    
+    try:
+        with webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options) as driver:
+            driver.get(url)
+            time.sleep(2)  # Wait for the page to load
+            html = driver.page_source
+            text = BeautifulSoup(html, 'html.parser').get_text(separator=' ', strip=True)
+
+            if len(text) < 20:
+                return "Not enough text to detect language."
+            detected_lang = detect(text)
+            return detected_lang
+    except Exception as e:
+        return f"Error: {e}"
+
+def delete_price_elements(driver):
+    currency_symbols = ["$", "€", "£", "EUR", "USD", "¥", "JPY", "₽"]
+    for symbol in currency_symbols:
         try:
-            element.click()
-            return True
-        except Exception:
+            elements_to_delete = driver.find_elements(By.XPATH, f"//*[contains(text(), '{symbol}')]")
+            for element in elements_to_delete:
+                driver.execute_script("arguments[0].remove();", element)
+        except Exception as e:
             continue
-    return False
 
-# Function to convert URLs to PDFs
-def convert_urls_to_pdfs(urls, mpns):
+def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
     options = Options()
     options.add_argument("--headless")
-    pdf_files = []
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument('--disable-gpu')
+    options.add_argument('--ignore-certificate-errors')
+
+    user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36"
+    options.add_argument(f"user-agent={user_agent}")
+    options.add_argument('--lang=en')
+        
+    pdf_paths = []
+    output_data = []
+
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+
+    for i, url in enumerate(urls):
+        try:
+            detected_lang = detect_language_from_url(url)
+            if detected_lang != 'en':
+                url = f"https://translate.google.com/translate?hl=en&sl={detected_lang}&u={url}"
+            driver.get(url)
+            time.sleep(random.uniform(1, 3))
+            close_cookie_consent(driver)
+
+            if additional_text:
+                try:
+                    print("there is additional_text ")
+                    keywords = [keyword.strip() for keyword in additional_text.split(',')]
+                    for keyword in keywords:
+                        expanded_elements = driver.find_elements(By.XPATH, f"//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), '{keyword.lower()}')]")
+                        for element in expanded_elements:
+                            try:
+                                element.click()
+                                print("clicked additional_text")
+                            except Exception:
+                                print("Not clicked additional_text")
+                                continue
+                except Exception as e:
+                    continue
+            time.sleep(random.uniform(1, 3))
+            delete_price_elements(driver)
+
+            driver.execute_script("document.body.style.zoom='110%';")
+            time.sleep(random.uniform(1, 3))
+
+            total_height = driver.execute_script("return document.body.scrollHeight")
+            driver.set_window_size(1920, total_height)
+
+            screenshot_path = f'{output_dir}/screenshot_{i}.png'
+            driver.save_screenshot(screenshot_path)
+            image = Image.open(screenshot_path)
+
+            pdf_path = os.path.join(output_dir, f'{mpns[i]}.pdf')
+            image.convert('RGB').save(pdf_path, format='PDF')
+            pdf_paths.append(pdf_path)
+
+            output_data.append({
+                "MPN": mpns[i],
+                "HTML": url,
+                "PDF Path": pdf_path
+            })
+
+        except Exception as e:
+            st.error(f"Error processing {url}: {e}")
+            continue
+
+    driver.quit()
     
-    with tempfile.TemporaryDirectory() as temp_dir:
-        driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options)
+    output_df = pd.DataFrame(output_data)
+    output_excel_path = os.path.join(output_dir, "output.xlsx")
+    output_df.to_excel(output_excel_path, index=False)  # Save output to Excel in specified folder
+    return pdf_paths, output_excel_path
 
-        for i, url in enumerate(urls):
-            try:
-                driver.get(url)
-                time.sleep(random.uniform(1, 3))
-                close_cookie_consent(driver)
-                time.sleep(random.uniform(1, 3))
+def create_zip_file(pdf_paths, output_dir):
+    zip_filename = os.path.join(output_dir, 'pdfs.zip')
+    with zipfile.ZipFile(zip_filename, 'w') as zipf:
+        for pdf in pdf_paths:
+            zipf.write(pdf, os.path.basename(pdf))
+    return zip_filename
 
-                total_height = driver.execute_script("return document.body.scrollHeight")
-                driver.set_window_size(1920, total_height)
-
-                # Capture screenshot and convert to PDF
-                screenshot_path = f'{temp_dir}/screenshot_{i}.png'
-                driver.save_screenshot(screenshot_path)
-                pdf_buffer = io.BytesIO()
-                image = Image.open(screenshot_path)
-                image.convert('RGB').save(pdf_buffer, format='PDF')
-                pdf_buffer.seek(0)
-
-                # Prepare filename for saving
-                pdf_filename = f'{mpns[i]}.pdf'
-                pdf_files.append((pdf_filename, pdf_buffer))
-
-            except Exception as e:
-                st.error(f"Error processing {url}: {e}")
-
-        driver.quit()
-        return pdf_files
-
-# Streamlit interface
+# Streamlit UI
 st.title("HTML to PDF Converter")
-st.write("Upload an Excel file containing URLs and MPNs.")
 
-uploaded_file = st.file_uploader("Choose an Excel file", type=["xlsx"])
-
+uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
 if uploaded_file:
     df = pd.read_excel(uploaded_file)
 
@@ -80,29 +173,25 @@ if uploaded_file:
         urls = df['URL'].dropna().tolist()
         mpns = df['MPN'].dropna().tolist()
 
+        additional_text = st.text_input("Enter additional text to expand elements (leave blank for none):")
+        output_dir = st.text_input("Enter output directory (leave blank for default temp directory):", value=os.getcwd())
+
         if st.button("Convert"):
             if urls:
-                with st.spinner("Converting..."):
-                    pdf_files = convert_urls_to_pdfs(urls, mpns)
-                    st.success("Conversion completed!")
+                if not os.path.exists(output_dir):
+                    st.error("The specified output directory does not exist.")
+                else:
+                    pdf_paths, output_excel_path = convert_urls_to_pdfs(urls, mpns, additional_text, output_dir)
+                    
+                    # Create a zip file for all PDFs
+                    zip_file_path = create_zip_file(pdf_paths, output_dir)
 
-                    # Create a temporary zip file
-                    with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as zip_file:
-                        with zipfile.ZipFile(zip_file, 'w') as zf:
-                            for pdf_filename, pdf_buffer in pdf_files:
-                                pdf_buffer.seek(0)
-                                zf.writestr(pdf_filename, pdf_buffer.read())
+                    st.success("Conversion completed! Download your files below:")
+                    st.download_button(label="Download All PDFs as Zip", data=open(zip_file_path, "rb"), file_name="pdfs.zip", mime='application/zip')
 
-                    # Provide download link for the zip file
-                    with open(zip_file.name, "rb") as f:
-                        st.download_button(
-                            label="Download All PDFs",
-                            data=f,
-                            file_name="converted_pdfs.zip",
-                            mime="application/zip",
-                        )
-
+                    with open(output_excel_path, "rb") as f:
+                        st.download_button(label="Download Output Excel", data=f, file_name="output.xlsx", mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
             else:
-                st.warning("No valid URLs found in the Excel file.")
+                st.warning("No valid URLs found.")
     else:
-        st.error("Excel file must contain 'URL' and 'MPN' columns.")
+        st.error("'URL' and 'MPN' columns must be present in the Excel file.")
