@@ -61,12 +61,12 @@ def detect_language_from_url(url):
     try:
         with webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options) as driver:
             driver.get(url)
-            st.success("Got URL for langdetect!",url)
+            st.success(url)
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
             html = driver.page_source
-            st.success("Got html content for langdetect!",html)
+            st.success(html)
             text = BeautifulSoup(html, 'html.parser').get_text(separator=' ', strip=True)
-            st.success("Got text content for langdetect!",text)
+            st.success(text)
             detected_lang = detect(text)
             return detected_lang
     except Exception as e:
@@ -104,7 +104,7 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
                 url = f"https://translate.google.com/translate?hl=en&sl={detected_lang}&u={url}"
             driver.get(url)
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-            st.success("Got URL!",url)
+            st.success(url)
             
             close_cookie_consent(driver)
             st.success("Closed Cookies !")
