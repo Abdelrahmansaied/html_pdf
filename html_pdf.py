@@ -61,7 +61,7 @@ def detect_language_from_url(url):
     try:
         with webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options) as driver:
             driver.get(url)
-            time.sleep(2)  # Wait for the page to load
+            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
             html = driver.page_source
             text = BeautifulSoup(html, 'html.parser').get_text(separator=' ', strip=True)
 
@@ -103,9 +103,11 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
             if detected_lang != 'en':
                 url = f"https://translate.google.com/translate?hl=en&sl={detected_lang}&u={url}"
             driver.get(url)
-            time.sleep(random.uniform(1, 3))
+            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+            print("Got URL")
+            
             close_cookie_consent(driver)
-
+            print("Closed Cookies")
             if additional_text:
                 try:
                     print("there is additional_text ")
@@ -121,11 +123,12 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
                                 continue
                 except Exception as e:
                     continue
-            time.sleep(random.uniform(1, 3))
+            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
             delete_price_elements(driver)
+            print("Deleted Price")
 
             driver.execute_script("document.body.style.zoom='110%';")
-            time.sleep(random.uniform(1, 3))
+            WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
             total_height = driver.execute_script("return document.body.scrollHeight")
             driver.set_window_size(1920, total_height)
@@ -133,7 +136,7 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
             screenshot_path = f'{output_dir}/screenshot_{i}.png'
             driver.save_screenshot(screenshot_path)
             image = Image.open(screenshot_path)
-
+            print("Took Shot ")
             pdf_path = os.path.join(output_dir, f'{mpns[i]}.pdf')
             image.convert('RGB').save(pdf_path, format='PDF')
             pdf_paths.append(pdf_path)
