@@ -4,6 +4,7 @@ import os
 import time
 import random
 import tempfile
+from webdriver_manager.core.os_manager import ChromeType
 import zipfile
 from PIL import Image
 from selenium import webdriver
@@ -58,7 +59,7 @@ def detect_language_from_url(url):
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36")
     
     try:
-        with webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options) as driver:
+        with webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options) as driver:
             driver.get(url)
             time.sleep(2)  # Wait for the page to load
             html = driver.page_source
