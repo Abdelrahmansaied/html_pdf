@@ -70,7 +70,7 @@ def detect_language_from_url(url):
             detected_lang = detect(text)
             return detected_lang
     except Exception as e:
-        return f"Error: {e}"
+        return "en"
 
 def delete_price_elements(driver):
     currency_symbols = ["$", "€", "£", "EUR", "USD", "¥", "JPY", "₽"]
@@ -108,6 +108,20 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
             
             close_cookie_consent(driver)
             st.success("Closed Cookies !")
+            if detected_lang != 'en':
+                try:
+                    print("entering the trans bar")
+                    wait = WebDriverWait(driver, 10)
+                    iframe = wait.until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
+                    driver.switch_to.frame(iframe)
+                    # Wait for the desired element to be visible and remove it
+                    element = wait.until(EC.visibility_of_element_located((By.XPATH, '//*[@jsname="ctOWCc"]')))
+                    driver.execute_script("var element = arguments[0]; element.parentNode.removeChild(element);", element)
+                    driver.switch_to.default_content()
+                except:
+                    print("couldn't remove the trans bar")
+                    pass
+            
             if additional_text:
                 try:
                     print("there is additional_text ")
