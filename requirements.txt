@@ -4,3 +4,4 @@ pillow
 pandas
 openpyxl
 webdriver-manager
+langdetect
