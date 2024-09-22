@@ -64,9 +64,7 @@ def detect_language_from_url(url):
             st.success(url)
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
             html = driver.page_source
-            st.success(html)
             text = BeautifulSoup(html, 'html.parser').get_text(separator=' ', strip=True)
-            st.success(text)
             detected_lang = detect(text)
             return detected_lang
     except Exception as e:
