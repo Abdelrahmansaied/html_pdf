@@ -82,6 +82,10 @@ def delete_price_elements(driver):
 
 def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
     options = Options()
+    proxy = "brd.superproxy.io:22225"  # Actual proxy
+    username = "brd-customer-hl_22500845-zone-residential_proxy1"
+    password = "52nangm2q9y2"
+    options.add_argument(f"--proxy-server={proxy}")
     options.add_argument("--headless")
     options.add_argument("--window-size=1920,1080")
     options.add_argument('--disable-gpu')
