@@ -104,10 +104,10 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
                 url = f"https://translate.google.com/translate?hl=en&sl={detected_lang}&u={url}"
             driver.get(url)
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
-            print("Got URL")
+            st.success("Got URL!",url)
             
             close_cookie_consent(driver)
-            print("Closed Cookies")
+            st.success("Closed Cookies !")
             if additional_text:
                 try:
                     print("there is additional_text ")
@@ -125,8 +125,7 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
                     continue
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
             delete_price_elements(driver)
-            print("Deleted Price")
-
+            st.success("Deleted Price!")
             driver.execute_script("document.body.style.zoom='110%';")
             WebDriverWait(driver, 20).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
 
@@ -136,7 +135,7 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
             screenshot_path = f'{output_dir}/screenshot_{i}.png'
             driver.save_screenshot(screenshot_path)
             image = Image.open(screenshot_path)
-            print("Took Shot ")
+            st.success("Took Shot!")
             pdf_path = os.path.join(output_dir, f'{mpns[i]}.pdf')
             image.convert('RGB').save(pdf_path, format='PDF')
             pdf_paths.append(pdf_path)
