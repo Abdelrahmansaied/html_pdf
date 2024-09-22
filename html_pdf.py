@@ -110,7 +110,7 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
             st.success("Closed Cookies !")
             if detected_lang != 'en':
                 try:
-                    print("entering the trans bar")
+                    st.success("Entering trans bar")
                     wait = WebDriverWait(driver, 10)
                     iframe = wait.until(EC.presence_of_element_located((By.TAG_NAME, "iframe")))
                     driver.switch_to.frame(iframe)
