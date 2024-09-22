@@ -59,7 +59,7 @@ def detect_language_from_url(url):
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36")
     
     try:
-        with webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options) as driver:
+        with webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options) as driver:
             driver.get(url)
             time.sleep(2)  # Wait for the page to load
             html = driver.page_source
@@ -96,7 +96,7 @@ def convert_urls_to_pdfs(urls, mpns, additional_text, output_dir):
     pdf_paths = []
     output_data = []
 
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=chrome_options) 
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager(chrome_type=ChromeType.CHROMIUM).install()), options=options) 
     for i, url in enumerate(urls):
         try:
             detected_lang = detect_language_from_url(url)
